@@ -50,7 +50,10 @@ Shared Python code importable by any model as `from utilities.module import ...`
 ### Prerequisites
 
 - Python 3.12+
-- Redis running locally
+- Redis running locally — if not installed:
+  - **macOS**: `brew install redis && brew services start redis`
+  - **Ubuntu/Debian**: `sudo apt install redis-server && sudo systemctl enable --now redis-server`
+  - **Other**: see the [Redis installation docs](https://redis.io/docs/latest/operate/oss_and_stack/install/install-redis/)
 - An [Anthropic API key](https://console.anthropic.com) — required for the bizdev simulation and both agents; not needed for the basic test simulation
 
 ---
@@ -78,13 +81,19 @@ bash setup.sh
 
 `setup.sh` creates a shared virtualenv and installs requirements for the framework, model, utilities, and any agents in one pass.
 
-**3. Initialize Redis**
+**3. Activate the virtualenv**
+
+```bash
+source venv/bin/activate
+```
+
+**4. Initialize Redis**
 
 ```bash
 venv/bin/python3 setup_redis.py
 ```
 
-**4. Run the simulation**
+**5. Run the simulation**
 
 ```bash
 bash run.sh
@@ -92,16 +101,33 @@ bash run.sh
 
 This starts the controller and all workers in a single terminal. Press Ctrl+C to stop.
 
-**5. Run the monitor agent** (in a separate terminal)
+**6. Run the monitor agent** (in a separate terminal)
 
 ```bash
 cd agents/test_agent
 cp .env.example .env
 # Edit .env — set ANTHROPIC_API_KEY and DATA_DIR (absolute path to framework's model_data/)
-venv/bin/python3 agent.py
+source ../../venv/bin/activate
+python3 agent.py
 ```
 
 The agent reads the simulation's worker log, identifies active and stalled workers, and prints a status report.
+
+**7. (Optional) Schedule the monitor agent via the framework cron worker**
+
+Instead of running the agent manually, you can have the framework's cron worker launch it automatically at a simulated-time interval. Open the model's crontab file:
+
+```bash
+models/test_model/crontab
+```
+
+Add a line specifying when (in simulated time) the agent should run. For example, to run it every 6 simulated hours:
+
+```
+0 */6 * * *   $MODEL_DIR/../../venv/bin/python3 $MODEL_DIR/../../agents/test_agent/agent.py
+```
+
+`$MODEL_DIR` is automatically set by the cron worker to the model's directory path, so this path resolves correctly regardless of where you cloned the framework. The agent runs as a fire-and-forget subprocess — it does not block the simulation clock.
 
 ---
 
@@ -126,13 +152,19 @@ git clone https://github.com/aurite-simulator/utilities       utilities
 bash setup.sh
 ```
 
-**3. Set your Anthropic API key**
+**3. Activate the virtualenv**
+
+```bash
+source venv/bin/activate
+```
+
+**4. Set your Anthropic API key**
 
 ```bash
 echo "ANTHROPIC_API_KEY=sk-ant-..." > .env
 ```
 
-**4. Initialize databases and Redis**
+**5. Initialize databases and Redis**
 
 ```bash
 venv/bin/python3 setup_redis.py
@@ -140,25 +172,25 @@ venv/bin/python3 setup_redis.py
 
 This seeds 1,000 prospect leads and 7 salespeople, clears the leads CSV, and prepares Redis for a fresh simulation run.
 
-**5. Run the simulation**
+**6. Run the simulation**
 
 ```bash
 bash run.sh
 ```
 
-**6. Generate an executive report** (while the simulation is running, or after)
+**7. Generate an executive report** (while the simulation is running, or after)
 
 ```bash
 cd agents/simp_monitor
 cp .env.example .env
 # Edit .env — set ANTHROPIC_API_KEY and DATA_DIR (absolute path to framework's model_data/)
-source venv/bin/activate
+source ../../venv/bin/activate
 python agent.py
 ```
 
 The agent queries the three SQLite databases, calls Claude Haiku to write a narrative summary and recommendations, and saves a timestamped Markdown report and an HTML dashboard to `model_data/reports/`.
 
-**7. Inspect results directly**
+**8. Inspect results directly**
 
 ```bash
 # Pipeline status by stage
