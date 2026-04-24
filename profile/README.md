@@ -190,7 +190,23 @@ python agent.py
 
 The agent queries the three SQLite databases, calls Claude Haiku to write a narrative summary and recommendations, and saves a timestamped Markdown report and an HTML dashboard to `model_data/reports/`.
 
-**8. Inspect results directly**
+**8. (Optional) Schedule the report agent via the framework cron worker**
+
+To have the agent generate reports automatically at a simulated-time interval, add it to the model's crontab file:
+
+```bash
+models/bizdev-model/crontab
+```
+
+For example, to generate a report every 12 simulated hours:
+
+```
+0 */12 * * *   $MODEL_DIR/../../venv/bin/python3 $MODEL_DIR/../../agents/simp_monitor/agent.py
+```
+
+`$MODEL_DIR` is automatically set by the cron worker to the model's directory path. The agent runs as a fire-and-forget subprocess and does not block the simulation clock.
+
+**9. Inspect results directly**
 
 ```bash
 # Pipeline status by stage
