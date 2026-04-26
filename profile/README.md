@@ -33,7 +33,7 @@ The simulation engine. Manages a Redis-backed simulated clock, a ready gate that
 
 ### Models
 
-A model is a git repository with a `model_config.py` (worker list, simulation time window, task assignments) and a `tasks/` directory of worker functions. Each task function takes the current simulated time and returns the number of simulated hours until that worker should fire again. Workers read and write external state — SQLite databases, CSV files, Redis keys — freely.
+A model is a git repository with a `model_config.py` (worker list, simulation time window, router assignments) and a `tasks/` directory containing task functions and a `router.py`. Workers are mapped to **router functions** in `model_config.py` — a router selects which task to run on each firing based on database state, weighted random choice, or any other logic. This keeps workers and tasks decoupled: multiple workers can share tasks, and a worker's behaviour can change mid-simulation without touching the framework. Task functions take the current simulated time and return the number of simulated hours until that worker should fire again. Workers read and write external state — SQLite databases, CSV files, Redis keys — freely.
 
 ### Agents
 
